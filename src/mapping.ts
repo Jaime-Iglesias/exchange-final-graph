@@ -17,7 +17,9 @@ import {
     Token,
     User,
     UserTokenBalance
-} from '../../ExchangeFinal/generated/schema';
+} from '../generated/schema';
+
+const zero_address = '0x0000000000000000000000000000000000000000';
 
 export function handleOrderCanceled(event: OrderCanceled): void {}
 
@@ -35,25 +37,35 @@ export function handleTokenAdded(event: TokenAdded): void {
     // if the token was not previously added...
     if (token == null) {
         token = new Token(tokenId);
-        token.name = "Unnamed ERC20";
-        token.symbol = 'ERC20';
+
+        // the token is ETH
+        if (tokenId == zero_address) {
+            token.name = "Ether";
+            token.symbol = 'ETH';
+        }
+
         token.decimals = BigInt.fromI32(18);
 
-        // try to fetch optional fields
-        let tokenContract = ERC20.bind(event.params.token);
+        if (tokenId != zero_address) {
+            token.name = "Unnamed ERC20";
+            token.symbol = 'ERC20';
 
-        let decimalsCall = tokenContract.try_decimals();
-        let symbolCall = tokenContract.try_name();
-        let nameCall = tokenContract.try_symbol();
+            // try to fetch optional fields
+            let tokenContract = ERC20.bind(event.params.token);
 
-        if (!decimalsCall.reverted) {
-            token.decimals = BigInt.fromI32(decimalsCall.value);
-        }
-        if (!symbolCall.reverted) {
-            token.symbol = symbolCall.value;
-        }
-        if (!nameCall.reverted) {
-            token.name = nameCall.value;
+            let decimalsCall = tokenContract.try_decimals();
+            let symbolCall = tokenContract.try_name();
+            let nameCall = tokenContract.try_symbol();
+
+            if (!decimalsCall.reverted) {
+                token.decimals = BigInt.fromI32(decimalsCall.value);
+            }
+            if (!symbolCall.reverted) {
+                token.symbol = symbolCall.value;
+            }
+            if (!nameCall.reverted) {
+                token.name = nameCall.value;
+            }
         }
     }
 
@@ -77,7 +89,7 @@ export function handleTokensDeposited(event: TokensDeposited): void {
         user = new User(userId);
     }
 
-    let depositId = event.params.depositer.toHex() + '-' + event.params.token;
+    let depositId = event.params.depositer.toHex() + '-' + event.params.token.toHex();
     let deposit = UserTokenBalance.load(depositId);
 
     // first time user deposits this token
@@ -92,7 +104,7 @@ export function handleTokensDeposited(event: TokensDeposited): void {
 }
 
 export function handleTokensWithdrawed(event: TokensWithdrawed): void {
-    let depositId = event.params.withdrawer.toHex() + '-' + event.params.token;
+    let depositId = event.params.withdrawer.toHex() + '-' + event.params.token.toHex();
     let deposit = UserTokenBalance.load(depositId);
     deposit.amountAvailable = (deposit.amountAvailable).minus(event.params.amount);
     deposit.save();

@@ -1,0 +1,42 @@
+specVersion: 0.0.2
+schema:
+  file: schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: Contract
+    network: goerli
+    source:
+      address: "0xe528cdfa4829a7bcef30cc4a1b80a7006e4dba3b"
+      abi: Contract
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Token
+        - User
+        - UserTokenBalance
+        - Order
+      abis:
+        - name: Contract
+          file: Contract/abis/Contract.json
+        - name: ERC20
+          file: Contract/abis/ERC20.json
+      eventHandlers:
+        - event: OrderCanceled(bytes32)
+          handler: handleOrderCanceled
+        - event: OrderCreated(address,uint256,address,uint256,address,uint256,uint256)
+          handler: handleOrderCreated
+        - event: OrderFilled(bytes32,uint256)
+          handler: handleOrderFilled
+        - event: OwnershipTransferred(indexed address,indexed address)
+          handler: handleOwnershipTransferred
+        - event: TokenAdded(address)
+          handler: handleTokenAdded
+        - event: TokenRemoved(address)
+          handler: handleTokenRemoved
+        - event: TokensDeposited(address,address,uint256)
+          handler: handleTokensDeposited
+        - event: TokensWithdrawed(address,address,uint256)
+          handler: handleTokensWithdrawed
+      file: Contract/Contract.wasm
