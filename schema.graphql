@@ -1,0 +1,34 @@
+type Token @entity {
+    id: ID! # the token address
+    name: String!
+    symbol: String!
+    decimals: BigInt!
+    admitted: Boolean!
+}
+
+type UserTokenBalance @entity {
+    id: ID! # concatenation of user address and token address
+    user : User!
+    token: Token!
+    amountLocked: BigInt!
+    amountAvailable: BigInt!
+}
+
+type Order @entity {
+    id: ID! # the order hash
+    haveToken: Token!
+    haveAmount: BigInt!
+    wantToken: Token!
+    wantAmount: BigInt!
+    creator: User!
+    nonce: BigInt!
+    expirationBlock: BigInt!
+    filledAmount: BigInt!
+    canceled: Boolean!
+}
+
+type User @entity {
+    id: ID! # the user address
+    orderSubmissions: [Order!]! @derivedFrom (field: "creator")
+    tokens: [UserTokenBalance!]! @derivedFrom(field: "user") # array of tokens the user has escrowed
+}
