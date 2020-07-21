@@ -1,33 +1,79 @@
 import { BigInt } from "@graphprotocol/graph-ts"
 import {
-  Contract,
+  Dex,
   OrderCanceled,
   OrderCreated,
   OrderFilled,
-  OwnershipTransferred,
   TokenAdded,
   TokenRemoved,
   TokensDeposited,
   TokensWithdrawed
-} from "../generated/Contract/Contract"
+} from "../generated/Dex/Dex"
 
-import { ERC20 } from "../generated/Contract/ERC20";
+import { ERC20 } from "../generated/Dex/ERC20";
 
 import {
     Token,
     User,
-    UserTokenBalance
+    UserTokenBalance,
+    Order
 } from '../generated/schema';
 
 const zero_address = '0x0000000000000000000000000000000000000000';
 
-export function handleOrderCanceled(event: OrderCanceled): void {}
+export function handleOrderCanceled(event: OrderCanceled): void {
+    let orderId = event.params.orderHash.toHex();
 
-export function handleOrderCreated(event: OrderCreated): void {}
+    let order = Order.load(orderId);
+    order.canceled = true;
+    order.save();
+}
 
-export function handleOrderFilled(event: OrderFilled): void {}
+export function handleOrderCreated(event: OrderCreated): void {
+    let orderId = event.params.orderHash.toHex();
 
-export function handleOwnershipTransferred(event: OwnershipTransferred): void {}
+    let order = new Order(orderId);
+
+    // fill order data
+    order.haveToken = event.params.haveToken.toHex();
+    order.haveAmount = event.params.haveAmount;
+    order.wantToken = event.params.wantToken.toHex();
+    order.wantAmount = event.params.wantAmount;
+    order.creator = event.params.creator.toHex();
+    order.nonce = event.params.nonce;
+    order.expirationBlock = event.params.expirationBlock;
+
+    // update user balance
+    let creatorTokenBalanceId = event.params.creator.toHex() + '-' + event.params.haveToken.toHex();
+    let creatorTokenBalance = UserTokenBalance.load(creatorTokenBalanceId);
+
+    creatorTokenBalance.amountAvailable = (creatorTokenBalance.amountAvailable).minus(event.params.haveAmount);
+    creatorTokenBalance.amountLocked = (creatorTokenBalance.amountLocked).plus(event.params.haveAmount);
+
+    creatorTokenBalance.save();
+    order.save();
+}
+
+export function handleOrderFilled(event: OrderFilled): void {
+    let orderId = event.params.orderHash.toHex();
+
+    let order = Order.load(orderId);
+    order.filledAmount = (order.filledAmount).plus(event.params.amount);
+
+    // load order creator have and want token balances
+    let creatorId = order.creator;
+
+    // load order filler have and want token balances
+    let fillerId = event.params.filler.toHex();
+
+    // calculate the amount the filler gets
+    let amountGet = ((order.haveAmount).times(event.params.amount)).div(order.wantAmount);
+
+    // update token balance for creator
+    // update token balance for filler
+
+    // persist
+}
 
 export function handleTokenAdded(event: TokenAdded): void {
     let tokenId = event.params.token.toHex();
