@@ -6,7 +6,7 @@ dataSources:
     name: Dex
     network: goerli
     source:
-      address: "0xb589057b1c29331649085235107d599b4abc8953"
+      address: "0xf209eb37053fc059c94e8472749d67e762aea214"
       abi: Dex
     mapping:
       kind: ethereum/events
